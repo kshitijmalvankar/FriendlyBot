@@ -4,6 +4,7 @@ import requests
 import json
 import random
 from replit import db
+from keep_alive import keep_alive
 
 
 
@@ -16,6 +17,9 @@ starter_encouragements = [
   "You are a great person!",
   "Hold on, there's always a rainbow after the rain!"
 ]
+
+if "responding" not in db.keys():
+  db["responding"] = True
 
 client = discord.Client()
 
@@ -58,13 +62,13 @@ async def on_message(message):
 
   if msg.startswith('inspire'):
     await message.channel.send(get_quote())
-
-  options = starter_encouragements
-  if "encouragements" in db.keys():
-    options = options+db["encouragements"]
-  
-  if any(word in msg for word in sad_words):
-    await message.channel.send(random.choice(starter_encouragements))
+  if db["responding"]: 
+    options = starter_encouragements
+    if "encouragements" in db.keys():
+      options = options+db["encouragements"]
+    
+    if any(word in msg for word in sad_words):
+      await message.channel.send(random.choice(starter_encouragements))
 
   if msg.startswith("$new"):
     encouraging_message = msg.split("$new ",1)[1]
@@ -77,8 +81,25 @@ async def on_message(message):
       index = int(msg.split("$del",1)[1])
       delete_encouragements(index)
       encouragements = db["encouragements"]
-    await message.chanel.send(encouragements)
+    await message.channel.send(encouragements)
 
 
+  if msg.startswith("$list"):
+    encouragements = []
+    if "encouragements" in db.keys():
+      encouragements = db["encouragements"]
+    await message.channel.send(encouragements)
+
+  if msg.startswith("$responding"):
+    value = msg.split("$responding ",1)[1]
+    if value.lower() == "true":
+      db["responding"] = True
+      await message.channel.send("Responding is on!")
+    else:
+      db["responding"] = False
+      await message.channel.send("Responding is off.")
+
+
+keep_alive()
 client.run(os.getenv('TOKEN')) 
   
